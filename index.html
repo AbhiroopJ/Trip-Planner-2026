@@ -236,8 +236,8 @@ input:focus, select:focus { border-color: var(--focus); background: var(--surfac
 }
 
 /* Floating add button */
-.fab { position: fixed; right: max(24px, env(safe-area-inset-right, 0px)); bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 30; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; padding: 15px 22px 15px 18px; font-weight: 600; cursor: pointer; color: var(--brand-ink); background: linear-gradient(135deg, var(--brand), var(--brand-2)); box-shadow: 0 18px 36px -12px var(--brand); }
-.fab:hover { filter: brightness(1.07); transform: translateY(-2px); }
+.fab { position: fixed; right: max(24px, env(safe-area-inset-right, 0px)); bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 30; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; padding: 15px 22px 15px 18px; font-weight: 600; cursor: pointer; color: #fff; background: linear-gradient(135deg, rgba(79, 70, 229, 0.72), rgba(124, 58, 237, 0.72)); backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.45); box-shadow: 0 16px 34px -12px rgba(79, 70, 229, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.5); text-shadow: 0 1px 2px rgba(30, 20, 90, 0.35); }
+.fab:hover { background: linear-gradient(135deg, rgba(79, 70, 229, 0.82), rgba(124, 58, 237, 0.82)); transform: translateY(-2px); }
 .fab svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
 
 .lock { position: fixed; inset: 0; z-index: 80; background: radial-gradient(1200px 600px at 50% -10%, var(--brand-soft), var(--bg)); display: grid; place-items: center; padding: 16px; }
@@ -251,7 +251,8 @@ input:focus, select:focus { border-color: var(--focus); background: var(--surfac
   .app { grid-template-columns: minmax(0, 1fr); gap: 14px; }
   .side { position: static; gap: 0; }
   .tripcard { display: none; }
-  .nav { position: fixed; z-index: 40; left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); flex-direction: row; justify-content: space-around; gap: 2px; padding: 6px; background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow-lg); }
+  .nav { position: fixed; z-index: 40; left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); flex-direction: row; justify-content: space-around; gap: 2px; padding: 6px; background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.7); border-radius: 24px; box-shadow: 0 12px 36px -12px rgba(30, 41, 90, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.85); }
+  .nav button[aria-current="true"] { background: rgba(255, 255, 255, 0.75); box-shadow: 0 2px 10px -4px rgba(79, 70, 229, 0.45), inset 0 1px 0 #fff; }
   .nav button[data-target="add"] { display: none; }
   .nav button { flex: 1; flex-direction: column; gap: 3px; padding: 8px 4px; font-size: 11px; text-align: center; justify-content: center; border-radius: 16px; min-width: 0; }
   .grid2 { grid-template-columns: minmax(0, 1fr); }
