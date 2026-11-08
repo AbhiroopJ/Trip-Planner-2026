@@ -12,8 +12,12 @@ window.FIREBASE_CONFIG = {
   messagingSenderId: "6419166857",
   appId: "1:6419166857:web:e7e2132508616269f9f858"
 };
+/* The shared family login. Create this user in Firebase console → Authentication → Users.
+   Its password is the family passcode. The email can be anything that looks like an email. */
+window.FAMILY_EMAIL = "family@tripledger.app";
 </script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -202,6 +206,10 @@ input:focus, select:focus { border-color: var(--focus); }
 .mini:disabled { opacity: 0.5; cursor: wait; }
 .paidlist li { color: var(--muted); }
 .row.editing { background: var(--soft); border-radius: 10px; padding-inline: 10px; }
+.lock { position: fixed; inset: 0; z-index: 50; background: var(--bg); display: grid; place-items: center; padding: 16px; }
+.lock form { display: flex; flex-direction: column; gap: 12px; width: min(360px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 26px; text-align: center; }
+.lock h2 { font-family: var(--serif); font-size: 24px; font-weight: 500; margin: 0; }
+.lock p { margin: 0 0 4px; color: var(--muted); font-size: 14px; }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--brand); color: var(--brand-ink); padding: 10px 16px; border-radius: 10px; font-size: 14px; z-index: 20; max-width: calc(100% - 32px); }
 
 @media (max-width: 900px) {
@@ -266,6 +274,7 @@ input:focus, select:focus { border-color: var(--focus); }
       </div>
       <img class="hero-img" id="hero-img" alt="" hidden>
       <div class="hero-actions">
+        <button type="button" class="ghost" id="lock-btn" hidden>Lock</button>
         <button type="button" class="ghost" id="edit-btn">Edit trip</button>
         <button type="button" class="ghost" id="photo-btn" hidden>Add your photo</button>
         <input type="file" id="photo-input" accept="image/*" hidden>
@@ -347,6 +356,15 @@ input:focus, select:focus { border-color: var(--focus); }
       <div id="ledger"></div>
     </section>
   </main>
+</div>
+<div class="lock" id="lock" hidden>
+  <form id="lock-form" autocomplete="on">
+    <h2>Family Trip Ledger</h2>
+    <p>Enter the family passcode to open it.</p>
+    <input id="lock-pass" type="password" autocomplete="current-password" placeholder="Passcode" aria-label="Passcode" required>
+    <button class="btn" id="lock-go" type="submit">Unlock</button>
+    <div class="status err" id="lock-status" role="alert"></div>
+  </form>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
 
@@ -469,6 +487,7 @@ input:focus, select:focus { border-color: var(--focus); }
     $("photo-btn").textContent = s.heroImg ? "Change photo" : "Add your photo";
     $("photo-btn").hidden = !(state.db && state.canWrite);
     $("edit-btn").hidden = !state.canWrite || !state.db;
+    $("lock-btn").hidden = !state.db;
 
     var exAll = state.expenses.filter(function (e) { return typeof e.amount === "number" && isFinite(e.amount); });
     var ex = state.cur === "all" ? exAll : exAll.filter(function (e) { return (e.city || "") === state.cur; });
@@ -825,26 +844,57 @@ input:focus, select:focus { border-color: var(--focus); }
     var cfg = window.FIREBASE_CONFIG;
     if (!window.firebase || !cfg || !cfg.apiKey || !cfg.projectId) { state.loaded = true; render(); lockForm(true, "Not connected yet. Add your Firebase config at the top of this file (see README-setup.md)."); return; }
 
-    var slow = setTimeout(function () { if (!state.loaded) setStatus("Still reaching the ledger. It may be out of date."); }, 10000);
-    Promise.resolve().then(function () {
-      if (!firebase.apps.length) firebase.initializeApp(cfg);
+    if (!firebase.apps.length) firebase.initializeApp(cfg);
+    var auth = firebase.auth(), famEmail = window.FAMILY_EMAIL || "family@tripledger.app", unsubs = [], slow = null;
+
+    function showLock() {
+      unsubs.forEach(function (u) { try { u(); } catch (e) {} }); unsubs = [];
+      clearTimeout(slow);
+      endEdit();
+      state.db = null; state.expenses = []; state.settlements = []; state.settings = {}; state.loaded = false;
+      setStatus(""); $("lock").hidden = false; $("lock-pass").value = ""; render();
+      setTimeout(function () { $("lock-pass").focus(); }, 50);
+    }
+    function startData() {
+      $("lock").hidden = true;
       var db = firebase.firestore();
       state.db = db;
-      db.collection("expenses").onSnapshot(function (snap) {
+      slow = setTimeout(function () { if (!state.loaded) setStatus("Still reaching the ledger. It may be out of date."); }, 10000);
+      function fail() { state.loaded = true; clearTimeout(slow); setStatus("The ledger is not reachable right now.", true); render(); }
+      unsubs.push(db.collection("expenses").onSnapshot(function (snap) {
         state.expenses = snap.docs.map(function (d) { var o = Object.assign({}, d.data()); o.id = d.id; return o; });
         if (!snap.metadata.fromCache) { state.loaded = true; clearTimeout(slow); if ($("status").textContent.indexOf("Still reaching") === 0) setStatus(""); }
         else if (snap.docs.length) state.loaded = true;
         if (state.editing && !state.expenses.some(function (x) { return x.id === state.editing; })) { endEdit(); toast("The expense you were editing was removed."); }
         render();
-      }, function () { state.loaded = true; clearTimeout(slow); setStatus("The ledger is not reachable right now.", true); render(); });
-      db.collection("settlements").onSnapshot(function (snap) {
+      }, fail));
+      unsubs.push(db.collection("settlements").onSnapshot(function (snap) {
         state.settlements = snap.docs.map(function (d) { var o = Object.assign({}, d.data()); o.id = d.id; return o; });
         render();
-      }, function () {});
-      db.doc("settings/trip").onSnapshot(function (snap) {
+      }, function () {}));
+      unsubs.push(db.doc("settings/trip").onSnapshot(function (snap) {
         state.settings = snap.exists ? Object.assign({}, snap.data()) : {};
         render();
-      }, function () {});
+      }, function () {}));
+      render();
+    }
+
+    $("lock-form").addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      var pass = $("lock-pass").value; if (!pass) return;
+      var go = $("lock-go"); go.disabled = true; $("lock-status").textContent = "";
+      auth.signInWithEmailAndPassword(famEmail, pass).catch(function (e) {
+        var c = (e && e.code) || "", m = "Could not sign in. Try again.";
+        if (c === "auth/invalid-credential" || c === "auth/wrong-password" || c === "auth/user-not-found" || c === "auth/invalid-login-credentials") m = "That passcode is not right.";
+        else if (c === "auth/too-many-requests") m = "Too many tries. Wait a few minutes and try again.";
+        else if (c === "auth/operation-not-allowed") m = "Email/Password sign-in is not enabled in Firebase yet. See README-setup.md.";
+        else if (c === "auth/network-request-failed") m = "No connection. Check your internet and try again.";
+        $("lock-status").textContent = m;
+      }).then(function () { go.disabled = false; });
+    });
+    $("lock-btn").addEventListener("click", function () { auth.signOut(); });
+    auth.onAuthStateChanged(function (user) {
+      if (user) startData(); else showLock();
     });
   }
   init();
