@@ -124,10 +124,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .grid2 { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; }
 .donut-row { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
 .donut { position: relative; width: 184px; height: 184px; flex: none; }
-.donut svg { width: 100%; height: 100%; transform: none; }
+.donut::before { content: ""; position: absolute; inset: -16px; border-radius: 50%; z-index: 0; filter: blur(14px); opacity: 0.9;
+  background: radial-gradient(circle at 28% 24%, rgba(123, 150, 105, 0.6), transparent 56%), radial-gradient(circle at 76% 72%, rgba(208, 169, 95, 0.5), transparent 56%), radial-gradient(circle at 74% 22%, rgba(108, 132, 128, 0.55), transparent 52%), radial-gradient(circle at 24% 78%, rgba(186, 200, 177, 0.7), transparent 52%); }
+#donut-svg { position: relative; z-index: 1; }
+.donut svg { width: 100%; height: 100%; transform: none; filter: drop-shadow(0 6px 10px rgba(29, 37, 27, 0.14)); }
 .donut circle { transition: stroke-dasharray .5s cubic-bezier(.2, .8, .2, 1); }
-.donut .ctr { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
-.donut .ctr b { font-size: 28px; font-weight: 650; line-height: 1.1; letter-spacing: -0.02em; }
+.donut .ctr { position: absolute; inset: 17%; z-index: 2; display: grid; place-content: center; text-align: center; border-radius: 50%; background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(14px) saturate(170%); -webkit-backdrop-filter: blur(14px) saturate(170%); border: 1px solid rgba(255, 255, 255, 0.85); box-shadow: 0 10px 24px -12px rgba(29, 37, 27, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -8px 16px -10px rgba(123, 150, 105, 0.35); }
+.donut .ctr b { font-size: 28px; font-weight: 650; line-height: 1.1; letter-spacing: -0.02em; white-space: nowrap; }
 .donut .ctr small { font-size: 11.5px; color: var(--muted); }
 .legend, .people { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 180px; display: flex; flex-direction: column; }
 .legend li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; }
@@ -475,7 +478,7 @@ body.itin-open { overflow: hidden; }
       <div class="card">
         <div class="card-head"><h2>Budget overview</h2><span class="aside">By category</span></div>
         <div class="donut-row">
-          <div class="donut"><div id="donut-svg" style="width:100%;height:100%"></div><div class="ctr"><b class="num" id="donut-main">₹0</b><small id="donut-sub">spent so far</small></div></div>
+          <div class="donut"><div id="donut-svg" style="width:100%;height:100%"></div><div class="ctr" id="donut-ctr"><b class="num" id="donut-main">₹0</b><small id="donut-sub">spent so far</small></div></div>
           <ul class="legend" id="legend"></ul>
         </div>
       </div>
@@ -797,6 +800,14 @@ body.itin-open { overflow: hidden; }
     else p.textContent = "Home";
   }
 
+  // Shrink the centre amount until it fits inside the glass disc, whatever the number's length.
+  function fitDonut() {
+    var b = $("donut-main"), box = $("donut-ctr"); if (!b || !box) return;
+    var size = 28; b.style.fontSize = size + "px";
+    var max = box.clientWidth * 0.86;
+    if (!max) return;
+    while (b.offsetWidth > max && size > 12) { size -= 1; b.style.fontSize = size + "px"; }
+  }
   function donut(segs, scale) {
     var host = $("donut-svg"); host.textContent = "";
     var ns = "http://www.w3.org/2000/svg";
@@ -807,19 +818,27 @@ body.itin-open { overflow: hidden; }
     function ring(stroke, dash, off) {
       var c = document.createElementNS(ns, "circle");
       c.setAttribute("cx", "21"); c.setAttribute("cy", "21"); c.setAttribute("r", "15.9155");
-      c.setAttribute("fill", "none"); c.setAttribute("stroke-width", "5.2");
+      c.setAttribute("fill", "none"); c.setAttribute("stroke-width", "4.6");
       c.style.stroke = stroke;
       if (dash) { c.setAttribute("stroke-dasharray", dash); c.setAttribute("stroke-dashoffset", String(off)); }
       return c;
     }
-    svg.append(ring("var(--soft)"));
+    var track = ring("var(--soft)"); track.style.opacity = "0.8"; svg.append(track);
     var off = 25;
     segs.forEach(function (s) {
       var len = scale > 0 ? (s.val / scale) * 100 : 0;
       if (len <= 0) return;
       var shown = Math.max(len - 0.6, 0.3);
-      svg.append(ring(catVar(s.cat), shown.toFixed(3) + " " + (100 - shown).toFixed(3), off));
+      var seg = ring(catVar(s.cat), shown.toFixed(3) + " " + (100 - shown).toFixed(3), off);
+      seg.style.opacity = "0.86";
+      svg.append(seg);
       off -= len;
+    });
+    [18.2155, 13.6155].forEach(function (r) {
+      var e = document.createElementNS(ns, "circle");
+      e.setAttribute("cx", "21"); e.setAttribute("cy", "21"); e.setAttribute("r", String(r));
+      e.setAttribute("fill", "none"); e.setAttribute("stroke", "rgba(255,255,255,0.8)"); e.setAttribute("stroke-width", "0.3");
+      svg.append(e);
     });
     host.append(svg);
   }
@@ -901,6 +920,7 @@ body.itin-open { overflow: hidden; }
     donut(cats.map(function (c) { return { cat: c, val: byCat[c] }; }), scale);
     if (budget) { $("donut-main").textContent = Math.round((total / budget) * 100) + "%"; $("donut-sub").textContent = state.cur === "all" ? "of budget used" : "of trip budget"; }
     else { $("donut-main").textContent = inr(total); $("donut-sub").textContent = "spent so far"; }
+    fitDonut();
 
     var legend = $("legend"); legend.textContent = "";
     if (!cats.length) legend.append(h("li", { class: "quiet" }, "Categories appear as expenses are added."));
@@ -1150,6 +1170,8 @@ body.itin-open { overflow: hidden; }
     });
     renderDays();
     setupNav();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitDonut);
+    window.addEventListener("resize", fitDonut);
     render();
 
     $("fab").addEventListener("click", function () { openSheet(); });
