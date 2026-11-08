@@ -44,26 +44,9 @@ window.FAMILY_EMAIL = "family@tripledger.app";
   --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px -14px rgba(15, 23, 42, 0.14);
   --shadow-lg: 0 28px 70px -22px rgba(15, 23, 42, 0.4);
   --r: 20px;
+  color-scheme: light;
   --serif: "Newsreader", Georgia, "Times New Roman", serif;
   --sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0b1020; --surface: #131a2e; --ink: #e8ecf8; --muted: #94a0bd; --line: #222c46; --soft: #1a2238;
-    --brand: #818cf8; --brand-2: #a78bfa; --brand-ink: #0b1020; --brand-soft: #1c2342;
-    --good: #4ade80; --danger: #f87171; --focus: #a5b4fc; --av-ink: #0b1020;
-    --c1: #818cf8; --c2: #2dd4bf; --c3: #fbbf24; --c4: #f472b6; --c5: #38bdf8; --c6: #4ade80; --c7: #94a3b8;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 28px -14px rgba(0, 0, 0, 0.6);
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #0b1020; --surface: #131a2e; --ink: #e8ecf8; --muted: #94a0bd; --line: #222c46; --soft: #1a2238;
-  --brand: #818cf8; --brand-2: #a78bfa; --brand-ink: #0b1020; --brand-soft: #1c2342;
-  --good: #4ade80; --danger: #f87171; --focus: #a5b4fc; --av-ink: #0b1020;
-  --c1: #818cf8; --c2: #2dd4bf; --c3: #fbbf24; --c4: #f472b6; --c5: #38bdf8; --c6: #4ade80; --c7: #94a3b8;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 28px -14px rgba(0, 0, 0, 0.6);
-  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -93,10 +76,6 @@ svg.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-widt
 .brand small { font-size: 10px; letter-spacing: 0.18em; color: var(--muted); font-weight: 600; }
 .icon-btn { width: 38px; height: 38px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; cursor: pointer; color: var(--muted); flex: none; }
 .icon-btn:hover { color: var(--ink); background: var(--soft); }
-.i-sun { display: none; }
-:root[data-theme="dark"] .i-sun { display: block; }
-:root[data-theme="dark"] .i-moon { display: none; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .i-sun { display: block; } :root:not([data-theme="light"]) .i-moon { display: none; } }
 .tripcard { background: linear-gradient(135deg, var(--brand-soft), var(--surface)); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; }
 .tripcard b { display: block; font-family: var(--serif); font-size: 18px; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
 .tripcard span { font-size: 12px; color: var(--muted); }
@@ -308,7 +287,6 @@ input:focus, select:focus { border-color: var(--focus); background: var(--surfac
       <span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 14l8-2 6-8 2 1-3 8 6 2-1 2-7-1-6 6-2-1 2-7z"/></svg></span>
       <span><b>Family Trip</b><small>LEDGER</small></span>
     </div>
-    <button type="button" class="icon-btn" id="theme-btn" aria-label="Toggle dark mode"><svg class="i i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg><svg class="i i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
     </div>
     <div class="tripcard"><b id="side-name">Barcelona &amp; Lisbon</b><span>Dec 17 – Jan 4</span></div>
     <nav class="nav" id="nav" aria-label="Sections">
@@ -414,7 +392,7 @@ input:focus, select:focus { border-color: var(--focus); background: var(--surfac
         </div>
         <div><label for="city">City</label><select id="city"></select></div>
         <div><label for="category">Category</label><select id="category"></select></div>
-        <div><label for="paidby">Paid by</label><input id="paidby" type="text" maxlength="40" list="names" placeholder="Pick or type a name" required><datalist id="names"></datalist></div>
+        <div><label for="paidby">Paid by</label><select id="paidby" required><option value="">Who paid?</option></select></div>
         <div><label for="date">Date</label><input id="date" type="date" required></div>
         <div class="wide"><span class="lbl">Split</span>
           <div class="seg splitseg" role="radiogroup" aria-label="Split"><input type="radio" name="splitmode" id="sm-all" value="all" checked><label for="sm-all">Split equally</label><input type="radio" name="splitmode" id="sm-pick" value="pick"><label for="sm-pick">Select people</label></div>
@@ -647,8 +625,6 @@ input:focus, select:focus { border-color: var(--focus); background: var(--surfac
       var pct = total > 0 ? Math.round((byPerson[n] / total) * 100) : 0;
       people.append(h("li", null, av, h("div", { class: "pn" }, h("b", null, n), h("small", null, pct + "% of spend")), h("span", { class: "amt" }, inr(byPerson[n]))));
     });
-    var dl = $("names"); dl.textContent = "";
-    names.forEach(function (n) { dl.append(h("option", { value: n })); });
 
     // Settle up
     var owed = {}, paidTot = {}, bal = {};
@@ -785,6 +761,12 @@ input:focus, select:focus { border-color: var(--focus); background: var(--surfac
 
   function init() {
     CATS.forEach(function (c) { $("category").append(h("option", { value: c }, c)); });
+    MEMBERS.forEach(function (m) { $("paidby").append(h("option", { value: m }, m)); });
+    function setPaidBy(v) {
+      var sel = $("paidby");
+      if (v && !Array.prototype.some.call(sel.options, function (o) { return o.value === v; })) sel.append(h("option", { value: v }, v));
+      sel.value = v || "";
+    }
     $("date").value = todayStr();
     try { var sc = localStorage.getItem("ledger-city"); if (sc) state.city = sc; } catch (e) {}
     $("city-cancel").addEventListener("click", function () { $("city-form").hidden = true; });
@@ -843,7 +825,7 @@ input:focus, select:focus { border-color: var(--focus); background: var(--surfac
       if (e.city && !Array.prototype.some.call($("city").options, function (o) { return o.value === e.city; })) $("city").append(h("option", { value: e.city }, e.city));
       $("city").value = e.city || $("city").value;
       $("category").value = CATS.indexOf(e.category) >= 0 ? e.category : "Other";
-      $("paidby").value = e.paidBy || "";
+      setPaidBy(e.paidBy);
       $("date").value = e.date || todayStr();
       setSplit((e.splitAmong && e.splitAmong.length) ? e.splitAmong : MEMBERS);
       setEditUi(true); setStatus("");
@@ -856,7 +838,7 @@ input:focus, select:focus { border-color: var(--focus); background: var(--surfac
       state.editing = null; state.preEdit = null;
       $("title").value = p.title || ""; $("amount").value = p.amount || "";
       setCur(p.cur); if (p.city) $("city").value = p.city; if (p.category) $("category").value = p.category;
-      $("paidby").value = p.paidby || ""; $("date").value = p.date || todayStr();
+      setPaidBy(p.paidby); $("date").value = p.date || todayStr();
       $(p.pick ? "sm-pick" : "sm-all").checked = true;
       state.split = p.split ? p.split : MEMBERS.slice(); drawChips();
       setEditUi(false);
@@ -881,13 +863,6 @@ input:focus, select:focus { border-color: var(--focus); background: var(--surfac
     $("sheet-x").addEventListener("click", closeSheet);
     $("sheet-bg").addEventListener("click", closeSheet);
     document.addEventListener("keydown", function (ev) { if (ev.key === "Escape" && !$("add").hidden) closeSheet(); });
-    try { var th = localStorage.getItem("ledger-theme"); if (th === "dark" || th === "light") document.documentElement.setAttribute("data-theme", th); } catch (e) {}
-    $("theme-btn").addEventListener("click", function () {
-      var root = document.documentElement, cur = root.getAttribute("data-theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-      var next = cur === "dark" ? "light" : "dark";
-      root.setAttribute("data-theme", next);
-      try { localStorage.setItem("ledger-theme", next); } catch (e) {}
-    });
 
     $("form").addEventListener("submit", function (ev) {
       ev.preventDefault();
